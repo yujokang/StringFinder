@@ -1,0 +1,23 @@
+unified (1):	[31;1m'.'[0m
+unified (2):	[31;1m'\\'[0m
+unified (3):	[31;1m'\.'[0m
+unified (4):	[31;1m'\''[0m
+unified (5):	[31;1m'\"'[0m
+unified (6):	[31;1m"."[0m
+unified (7):	[31;1m"\\"[0m
+unified (8):	[31;1m"\."[0m
+unified (9):	[31;1m"\'"[0m
+unified (10):	[31;1m"\""[0m
+unified (12):	[31;1m"This line just has a string."[0m
+unified (13):	[31;1m'This is a Python and Perl string.'[0m
+unified (14):	[31;1m""[0m[31;1m"This is a long Python string. It happens to work with normal strings."[0m[31;1m""[0m
+unified (15):	[31;1m""[0m[31;1m"But it will have empty strings before and after it."[0m[31;1m""[0m
+unified (17):	[31;1m"\"quoted\" at the beginning"[0m
+unified (18):	[31;1m"word at the end is \"quoted\""[0m
+unified (20):	[31;1m"I know, "[0m he said.
+unified (21):	He said: [31;1m"I know"[0m.
+unified (24):	The [31;1m"string never ends.[0m
+unified (26):	The character[31;1m's start marker is also an apostrophe, so there is no closing mark.[0m
+unified (28):	[31;1m"This string will not be ended by the character's marker.[0m
+unified (30):	This character[31;1m's marker will not be ended by this "string", as you can see.[0m
+

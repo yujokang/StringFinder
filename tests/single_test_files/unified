@@ -1,0 +1,31 @@
+'.'
+'\\'
+'\.'
+'\''
+'\"'
+"."
+"\\"
+"\."
+"\'"
+"\""
+
+"This line just has a string."
+'This is a Python and Perl string.'
+"""This is a long Python string. It happens to work with normal strings."""
+"""But it will have empty strings before and after it."""
+
+"\"quoted\" at the beginning"
+"word at the end is \"quoted\""
+
+"I know, " he said.
+He said: "I know".
+
+
+The "string never ends.
+
+The character's start marker is also an apostrophe, so there is no closing mark.
+
+"This string will not be ended by the character's marker.
+
+This character's marker will not be ended by this "string", as you can see.
+

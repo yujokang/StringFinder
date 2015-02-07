@@ -1,0 +1,3 @@
+The string is "dir_test_files/to_second_level_1/to_third_level_0/to_fourth_level_0/fourth_level_2"
+This is the deepest and largest file,
+because it also contains another "string" and a 'char'.

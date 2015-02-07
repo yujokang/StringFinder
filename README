@@ -1,0 +1,25 @@
+StringFinder:
+A small program for finding string-like expressions
+inside a file or directory containing code.
+The file and line will always be displayed.
+The user has the option of showing only the found strings,
+or the whole line, with the strings highlighted.
+
+Building and Installing:
+Just run "make", and "string_finder" will appear inside the "src" directory.
+
+When compiled out of the box, the code is optimized,
+and does not include debug information and output.
+These settings can be changed in the "_CPPFLAGS" variable in "common.mk":
+To add debug output, add "-D DEBUG".
+To add debug information to the binary, add "-g".
+"-O3" is the optimization flag, which you can remove or change.
+
+In "common.mk" you can also change "CC" to any GCC-compatible compiler.
+
+"string_finder": Run "./string_finder [target file or directory] [mode]".
+	A mode value of "a" will run string-only mode,
+	in which only the found strings are displayed.
+	A mode value of "l" will run whole-line mode
+	in which only all the lines containing strings are displayed.
+	If the mode is omitted, the mode will be string-only by default.

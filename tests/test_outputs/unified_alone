@@ -1,0 +1,27 @@
+unified (1):	'.'
+unified (2):	'\\'
+unified (3):	'\.'
+unified (4):	'\''
+unified (5):	'\"'
+unified (6):	"."
+unified (7):	"\\"
+unified (8):	"\."
+unified (9):	"\'"
+unified (10):	"\""
+unified (12):	"This line just has a string."
+unified (13):	'This is a Python and Perl string.'
+unified (14):	""
+unified (14):	"This is a long Python string. It happens to work with normal strings."
+unified (14):	""
+unified (15):	""
+unified (15):	"But it will have empty strings before and after it."
+unified (15):	""
+unified (17):	"\"quoted\" at the beginning"
+unified (18):	"word at the end is \"quoted\""
+unified (20):	"I know, "
+unified (21):	"I know"
+unified (24):	"string never ends.
+unified (26):	's start marker is also an apostrophe, so there is no closing mark.
+unified (28):	"This string will not be ended by the character's marker.
+unified (30):	's marker will not be ended by this "string", as you can see.
+
