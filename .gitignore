@@ -1,0 +1,16 @@
+*.o
+*.swp
+*.a
+libs/CommonC
+libs/LineGen
+include/compare_files.h
+include/data_structs.h
+include/debug_assert.h
+include/file_buffer.h
+include/get_random.h
+include/logger.h
+include/permutation.h
+include/xmath.h
+src/string_finder
+tests/test_string_finder
+
