@@ -20,6 +20,6 @@ struct string_finder_tv {
 	int whole_line;
 };
 
-#define N_STRING_FINDER_TVS	2
+#define N_STRING_FINDER_TVS	8
 /* the test vectors that will be run by "test_string_finders" */
 extern struct string_finder_tv *string_finder_tvs[N_STRING_FINDER_TVS];

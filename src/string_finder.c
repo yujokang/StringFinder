@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #define FILE_SEPARATOR	'/'
 
@@ -184,46 +185,99 @@ static void print_line_location(FILE *out,
 }
 
 /*
+ * Check if the file contains non-text characters,
+ * which will not print properly on terminal,
+ * and rewind the buffer.
+ * buffer:	the file buffer to check for non-text characters
+ * returns	0 iff all characters are printable or whitespace in ASCII,
+ *		1 otherwise
+ */
+static int has_non_text(file_buffer_t *buffer)
+{
+	size_t file_size = get_file_size(buffer);
+	long position;
+
+	while ((position = ftell_buffer(buffer)) < (long) file_size) {
+		int byte_value = fgetc_buffer(buffer);
+
+		if (!(isprint(byte_value) || isspace(byte_value))) {
+			return 1;
+		}
+	}
+
+	rewind_buffer(buffer);
+	return 0;
+}
+
+/*
+ * Perform action on file, which is converted into a buffer,
+ * only if all the characters are text characters.
+ * out:			the output stream to which to print,
+ *			and the first argument for "action"
+ * in:			the file input stream to convert to
+ *			a buffer from which to read
+ *			as the second argument to "action"
+ * in_file_name:	the name of the file from which to read,
+ *			and the third and final argument to "action"
+ * action:		the buffer-reading action to perform
+ * returns		0 on success or the file contains non-text characters,
+ *			-1 on failure, with errno set by
+ *			   "init_file_buffer" if initializing the input buffer
+ *			   failed,
+ *			   or by "action"
+ */
+static int do_text_buffer_action(FILE *out, FILE *in, const char *in_file_name,
+				 int (*action)(FILE *out, file_buffer_t *buffer,
+					       const char *in_file_name))
+{
+	file_buffer_t buffer;
+	int error;
+
+	if (init_file_buffer(&buffer, in)) {
+		printlg(ERROR_LEVEL, "Failed to generate buffer.\n");
+		return -1;
+	}
+
+	if (has_non_text(&buffer)) {
+		error = 0;
+	} else {
+		error = action(out, &buffer, in_file_name);
+	}
+
+
+	destroy_file_buffer(&buffer);
+	return error;
+}
+
+/*
  * the template for the warning to print if
  * a line was completed without finding the end of a string.
  * Arguments are file name (char *) and line number (unsigned).
  */
 #define INCOMPLETE_WARNING	"File %s, line %u " \
 				"might not contain a real, complete string.\n"
+
 /*
- * Separately print the strings in the file,
- * indicating their file and line number.
+ * Given a buffer to a file only containing text characters,
+ * find and print the separate strings.
  * out:			the output stream to which to print
- * in:			the file input stream in which to search for strings
+ * buffer:		the file input buffer in which to search for strings
  * in_file_name:	the name of the file from which to read
  * returns		0 on success,
  *			-1 on failure, with errno set by
- *			   "init_file_buffer" if initializing the input buffer
- *			   failed,
- *			   or by "fgetc_buffer" if the file unexpectedly ended
+ *			   "fgetc_buffer" if the file unexpectedly ended
  */
-static int find_strings_action(FILE *out, FILE *in, const char *in_file_name)
+static int
+_find_strings_action(FILE *out, file_buffer_t *buffer, const char *in_file_name)
 {
-	file_buffer_t buffer;
-	size_t file_size;
-	size_t line_number;
-	enum string_state state;
+	size_t file_size = get_file_size(buffer);
+	size_t line_number = 1;
+	enum string_state state = NO_STRING;
+	int error = 0;
 	char marker_char;
-	int error;
 
-	if (init_file_buffer(&buffer, in)) {
-		printlg(ERROR_LEVEL, "Failed to generate buffer to "
-				     "read strings from file.\n");
-		return -1;
-	}
-
-	error = 0;
-	file_size = get_file_size(&buffer);
-	line_number = 1;
-	state = NO_STRING;
-
-	while (ftell_buffer(&buffer) < (long) file_size) {
-		int current_input = fgetc_buffer(&buffer);
+	while (ftell_buffer(buffer) < (long) file_size) {
+		int current_input = fgetc_buffer(buffer);
 		unsigned char current_char;
 		int need_to_print, end_line;
 
@@ -303,8 +357,25 @@ static int find_strings_action(FILE *out, FILE *in, const char *in_file_name)
 	}
 	fprintf(out, "\n");
 
-	destroy_file_buffer(&buffer);	
 	return error;
+}
+
+/*
+ * Separately print the strings in the file,
+ * indicating their file and line number.
+ * out:			the output stream to which to print
+ * in:			the file input stream in which to search for strings
+ * in_file_name:	the name of the file from which to read
+ * returns		0 on success or the file contains non-text characters,
+ *			-1 on failure, with errno set by
+ *			   "init_file_buffer" if initializing the input buffer
+ *			   failed,
+ *			   or by "fgetc_buffer" if the file unexpectedly ended
+ */
+static int find_strings_action(FILE *out, FILE *in, const char *in_file_name)
+{
+	return do_text_buffer_action(out, in, in_file_name,
+				     _find_strings_action);
 }
 
 int find_strings(FILE *out, const char *root_path)
@@ -421,42 +492,30 @@ static int print_strings_in_line(FILE *out, file_buffer_t *buffer,
 }
 
 /*
- * Read through lines, printing out any that contain strings.
+ * Given a file buffer containing only text characters,
+ * read through lines, printing out any that contain strings.
  * out:			the output stream to which to print
- * in:			the file input stream in which to search for strings
+ * buffer:		the buffer in which to search for strings
  * in_file_name:	the name of the file from which to read
  * returns		0 on success,
  *			-1 on failure, with errno set by
- *			   "init_file_buffer" if initializing the input buffer
- *			   failed,
- *			   or by "fgetc_buffer" if the file unexpectedly ended,
+ *			   "fgetc_buffer" if the file unexpectedly ended,
  *			   or by "print_strings_in_line"
  */
-static int find_string_lines_action(FILE *out, FILE *in,
-				    const char *in_file_name)
+static int _find_string_lines_action(FILE *out, file_buffer_t *buffer,
+				     const char *in_file_name)
 {
-	file_buffer_t buffer;
-	size_t file_size;
-	size_t line_number;
+	size_t file_size = get_file_size(buffer);
+	size_t line_number = 1;
+	int error = 0;
 	long line_start;
-	int error;
 
-	if (init_file_buffer(&buffer, in)) {
-		printlg(ERROR_LEVEL, "Failed to generate buffer "
-				     "to find string lines in file.");
-		return -1;
-	}
-
-	error = 0;
-	line_number = 1;
-
-	file_size = get_file_size(&buffer);
-	while ((line_start = ftell_buffer(&buffer)) < (long) file_size) {
+	while ((line_start = ftell_buffer(buffer)) < (long) file_size) {
 		int line_continues = 1;
 
-		while (line_continues && ftell_buffer(&buffer) <
+		while (line_continues && ftell_buffer(buffer) <
 		       (long) file_size) {
-			int current_input = fgetc_buffer(&buffer);
+			int current_input = fgetc_buffer(buffer);
 			unsigned char current_char;
 
 			if (current_input == EOF) {
@@ -467,6 +526,9 @@ static int find_string_lines_action(FILE *out, FILE *in,
 				line_continues = 0;
 				error = -1;
 				break;
+			}
+
+			if (isprint(current_input)) {
 			}
 
 			current_char = (char) current_input;
@@ -482,7 +544,7 @@ static int find_string_lines_action(FILE *out, FILE *in,
 				 * Found a string in the line, so print it,
 				 * and go to the next line.
 				 */
-				error = print_strings_in_line(out, &buffer,
+				error = print_strings_in_line(out, buffer,
 							      in_file_name,
 							      line_number,
 							      line_start);
@@ -498,8 +560,24 @@ static int find_string_lines_action(FILE *out, FILE *in,
 	}
 	fprintf(out, "\n");
 
-	destroy_file_buffer(&buffer);	
 	return error;
+}
+
+/*
+ * Read through lines, printing out any that contain strings.
+ * out:			the output stream to which to print
+ * in:			the file input stream in which to search for strings
+ * in_file_name:	the name of the file from which to read
+ * returns		0 on success, or the file contains non-text characters,
+ *			-1 on failure, with errno set by
+ *			   "fgetc_buffer" if the file unexpectedly ended,
+ *			   or by "print_strings_in_line"
+ */
+static int find_string_lines_action(FILE *out, FILE *in,
+				    const char *in_file_name)
+{
+	return do_text_buffer_action(out, in, in_file_name,
+				     _find_string_lines_action);
 }
 
 int find_string_lines(FILE *out, const char *root_path)
